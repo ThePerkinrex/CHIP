@@ -1,21 +1,19 @@
-USE STD.AND AS and
 USE STD.NOT AS not
 
-IN i0
-IN i1
-IN i2
-OUT o
-OUT b
+IN q
+IN r
 
-CHIP and AND
-CHIP not NOT1
+OUT o1
+OUT o2
 
-RAIL r
-CONNECT i0 NOT1.i
-CONNECT NOT1.o r
-CONNECT i1 r
-CONNECT b r
+CHIP not not1
+CHIP not not2
 
-CONNECT AND.in0 r
-CONNECT AND.in1 i2
-CONNECT AND.out o
+CONNECT q not1.i
+CONNECT r not2.i
+
+CONNECT not1.o not2.i
+CONNECT not2.o not1.i
+
+CONNECT not1.o o1
+CONNECT not2.o o2

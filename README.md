@@ -2,7 +2,7 @@
 
 This is a language in which you can define some logic as chips and, using some backend compile into another thing (images, languages, or even a minecraft world backend could be written given enough effort), for now the only backend available is JS.
 
-See the test.chip in src for an example.
+See the example.chip in src for an example.
 
 That file would be compiled to the folowing js:
 ```js

@@ -1,0 +1,17 @@
+USE STD.NOT AS not
+USE STD.AND AS and
+
+IN in0
+IN in1
+
+OUT out
+
+CHIP not NOT
+CHIP and AND
+
+CONNECT in0 AND.in0
+CONNECT in1 AND.in1
+
+CONNECT AND.out NOT.i
+CONNECT NOT.o out
+

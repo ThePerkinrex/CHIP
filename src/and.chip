@@ -1,0 +1,18 @@
+USE STD.NOT AS not
+
+IN in0
+IN in1
+
+OUT out
+
+CHIP not nt1
+CHIP not nt2
+CHIP not nt3
+
+CONNECT in0 nt1.i
+CONNECT in1 nt2.i
+
+CONNECT nt1.o nt3.i
+CONNECT nt2.o nt3.i
+
+CONNECT nt3.o out

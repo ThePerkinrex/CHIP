@@ -6,20 +6,10 @@ use crate::lexer::{Chip, Program};
 use std::collections::HashMap;
 use std::fmt::Write;
 
-// const STD_AND: *const str = "
-// class STD_AND {
-// 	run(in0, in1) {
-// 		return {
-// 			out: in0 && in1
-// 		}
-// 	}
-// }
-// ";
-
 #[derive(Debug, Clone)]
 enum ConnectionTree {
 	Regular(String, Vec<ConnectionTree>),
-	Chip(String, HashMap<String, ConnectionTree>),
+	Chip(String, HashMap<String, Vec<ConnectionTree>>),
 }
 
 impl Backend for JsBackend {
@@ -124,7 +114,6 @@ fn gen_run_code(chip: Chip, program: &Program) -> String {
 		for out in &chip.outs {
 			trees.push(build_tree(out.clone(), &connections));
 		}
-		//println!("TREES: {:?}", trees);
 		for tree in trees {
 			if let ConnectionTree::Regular(name, connected) = tree {
 				writeln!(func, "{} = {};", name, val(connected, &chip_defines));
@@ -133,32 +122,22 @@ fn gen_run_code(chip: Chip, program: &Program) -> String {
 			}
 		}
 	}
-	// We should go from the output all the way to the to to see the order of calculation
-	// for rail in rails {
-	// 	let mut ins = Vec::new();
-	// 	for (o,i) in &connections {
-	// 		if o == &rail {
-	// 			// TODO check for chip outputs
-	// 			ins.push(i.clone());
-	// 		}
-	// 	}
-	// 	write!(func, "{} = {};", rail, ins.join("||"));
-	// }
 
 	writeln!(func, "return [{}];", chip.outs.join(","));
 	func += "}";
-	// println!("{}", func);
 	func
 }
 
 fn build_tree(start: String, connections: &Vec<(String, String)>) -> ConnectionTree {
 	if start.contains(".") {
-		let mut top: HashMap<String, ConnectionTree> = HashMap::new();
+		let mut top: HashMap<String, Vec<ConnectionTree>> = HashMap::new();
 		for (o, i) in connections {
-			//println!("{} {}", o, start);
 			if o.split(".").next().unwrap() == start.split(".").next().unwrap() && o != &start {
-				//FIXME add vec instead of a single value
-				top.insert(o.clone(), build_tree(i.clone(), &connections));
+				if top.contains_key(&o.clone()){
+					top.get_mut(&o.clone()).unwrap().push(build_tree(i.clone(), &connections));
+				}else{
+					top.insert(o.clone(), vec![build_tree(i.clone(), &connections)]);
+				}
 			}
 		}
 		return ConnectionTree::Chip(start, top);
@@ -187,14 +166,12 @@ fn val(trees: Vec<ConnectionTree>, chip_aliases_v: &HashMap<String, &Chip>) -> S
 			}
 			ConnectionTree::Chip(name, children) => {
 				let actual_name: String = name.split(".").next().unwrap().into();
-				//dbg!(&actual_name, chip_aliases_v);
 				let chip = chip_aliases_v.get(&actual_name).unwrap();
 				let mut args = Vec::new();
 				for i in &chip.ins {
 					let n = format!("{}.{}", actual_name, i);
-					args.push(val(vec![children.get(&n).unwrap().clone()], chip_aliases_v));
+					args.push(val(children.get(&n).unwrap().clone(), chip_aliases_v));
 				}
-				//let out_names: Vec<String> = chip.outs.iter().map(|x| format!("{}.{}", actual_name, x)).collect();
 				vals.push(format!(
 					"{}.run({})[{}]",
 					actual_name,
@@ -212,8 +189,9 @@ fn val(trees: Vec<ConnectionTree>, chip_aliases_v: &HashMap<String, &Chip>) -> S
 
 fn get_custom_code<'a>(n: String) -> &'a str {
 	match n.as_str() {
-		"AND" => "out = in0 && in1;\n",
+		//"AND" => "out = in0 && in1;\n",
 		"NOT" => "o = !i;\n",
+		//"XOR" => "out = !!(in0 ^ in1)",
 		c => panic!("{} is not a valid custom code in JS", c),
 	}
 }

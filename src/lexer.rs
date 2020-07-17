@@ -1,51 +1,60 @@
-use pest::{
-	iterators::Pairs,
-};
+use pest::iterators::Pairs;
+use pest::{iterators::Pair, Parser};
+use pest_derive::Parser;
+
 
 use std::collections::HashMap;
 
+#[derive(Parser)]
+#[grammar = "chip.pest"]
+pub struct ChipParser;
+
 use crate::{
 	ast::{StatementKind, AST},
-	Rule,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Program {
 	pub files: HashMap<String, Chip>,
 }
 
 impl Program {
-	pub fn new() -> Self {
+	fn new_simple() -> Self {
 		let mut hm = HashMap::new();
-		// FIXME Add a macro to do this
-		hm.insert(
-			"STD.AND".into(),
-			Chip {
-				ast: vec![
-					AST::IN("in0".into()),
-					AST::IN("in1".into()),
-					AST::OUT("out".into()),
-					AST::CUSTOM("AND".into())
-					],
-				ins: vec!["in0".into(), "in1".into()],
-				outs: vec!["out".into()],
-				name: "STD.AND".into()
-			},
-		);
 		hm.insert(
 			"STD.NOT".into(),
 			Chip {
 				ast: vec![
 					AST::IN("i".into()),
 					AST::OUT("o".into()),
-					AST::CUSTOM("NOT".into())
-					],
+					AST::CUSTOM("NOT".into()),
+				],
 				ins: vec!["i".into()],
 				outs: vec!["o".into()],
-				name: "STD.NOT".into()
+				name: "STD.NOT".into(),
 			},
 		);
-		Self { files: hm }
+		Self {files: hm}
+	}
+
+	pub fn new() -> Self {
+		let mut s = Self::new_simple();
+		let mut s_clone = s.clone();
+		s.files.insert(
+			"STD.AND".into(),
+			Chip::parse("STD.AND".into(), include_str!("and.chip"), &mut s_clone)
+		);
+		s_clone = s.clone();
+		s.files.insert(
+			"STD.XOR".into(),
+			Chip::parse("STD.XOR".into(), include_str!("xor.chip"), &mut s_clone)
+		);
+		s_clone = s.clone();
+		s.files.insert(
+			"STD.NAND".into(),
+			Chip::parse("STD.NAND".into(), include_str!("nand.chip"), &mut s_clone)
+		);
+		s
 	}
 
 	pub fn get_chip(&self, name: &String) -> &Chip {
@@ -68,7 +77,7 @@ pub struct Chip {
 	pub ast: Vec<AST>,
 	pub ins: Vec<String>,
 	pub outs: Vec<String>,
-	pub name: String
+	pub name: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -83,14 +92,27 @@ impl Chip {
 			ast: Vec::new(),
 			ins: Vec::new(),
 			outs: Vec::new(),
-			name
+			name,
 		}
+	}
+
+	pub fn parse(name: String, src: &str, program: &mut Program) -> Self {
+		let mut s = Self::new(name.clone());
+		let file = match ChipParser::parse(Rule::CHIP, src) {
+			Ok(mut p) => p.next().unwrap(),
+			Err(e) => {
+				//print_e(&e, src);
+				panic!("Parser error:\n{}", e);
+			}
+		};
+		s.lex(file.into_inner(), program);
+		s
 	}
 
 	pub fn lex(&mut self, p: Pairs<Rule>, program: &mut Program) {
 		let mut var: HashMap<String, StatementKind> = HashMap::new();
 		let mut rail: HashMap<String, Vec<(InOut, String)>> = HashMap::new();
-		let mut chip_defs:  HashMap<String, String> = HashMap::new();
+		let mut chip_defs: HashMap<String, String> = HashMap::new();
 		let mut uses: HashMap<String, String> = HashMap::new();
 		for pair in p {
 			let span = pair.as_span();
@@ -156,7 +178,8 @@ impl Chip {
 									)
 								} else {
 									if kind2 == &StatementKind::CHIP {
-										let chip = program.get_chip(chip_defs.get(&name2[0]).unwrap());
+										let chip =
+											program.get_chip(chip_defs.get(&name2[0]).unwrap());
 										if chip.ins.contains(&name2[1]) {
 											let r =
 												rail.get_mut(&name1[0]).expect("RAIL not found");
@@ -256,7 +279,6 @@ impl Chip {
 									}
 								}
 							} else if kind2 == &StatementKind::CHIP {
-								
 								let chip1 = program.get_chip(chip_defs.get(&name2[0]).unwrap());
 								let io = if chip1.ins.contains(&name2[1]) {
 									InOut::IN
@@ -306,7 +328,8 @@ impl Chip {
 					} else {
 						panic!("Name {} is not defined", name1[0]);
 					}
-					self.ast.push(AST::CONNECT(name1.join("."), name2.join(".")))
+					self.ast
+						.push(AST::CONNECT(name1.join("."), name2.join(".")))
 				}
 				Rule::CHIP_DEF => {
 					let mut inner = pair.into_inner();
@@ -317,7 +340,8 @@ impl Chip {
 							self.ast
 								.push(AST::CHIP(chip_use_name.clone(), define_name.clone()));
 							var.insert(define_name.clone(), StatementKind::CHIP);
-							chip_defs.insert(define_name, uses.get(&chip_use_name).unwrap().clone());
+							chip_defs
+								.insert(define_name, uses.get(&chip_use_name).unwrap().clone());
 						} else {
 							panic!("Name {} is already used", define_name);
 						}
