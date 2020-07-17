@@ -1,0 +1,18 @@
+USE STD.AND AS and
+
+IN i1
+IN i0
+IN i2
+OUT o
+OUT b
+
+CHIP and AND
+
+RAIL r
+CONNECT i0 r
+CONNECT i1 r
+CONNECT b r
+
+CONNECT AND.in0 r
+CONNECT AND.in1 i2
+CONNECT AND.out o
