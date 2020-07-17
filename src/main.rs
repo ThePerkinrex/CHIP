@@ -3,12 +3,10 @@ use pest_derive::Parser;
 
 use recolored::*;
 
-mod lexer;
 mod ast;
 mod backend;
-use backend::{JsBackend, Backend};
-
-
+mod lexer;
+use backend::{Backend, JsBackend};
 
 fn main() {
     let src = include_str!("test.chip");

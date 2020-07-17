@@ -28,15 +28,15 @@ macro_rules! ast {
 }
 
 ast! {
-	USE(path: NameID, alias: NameID), // CHIP names available for creation could have other ids
-	IN(n: NameID),
-	OUT(n: NameID),
+    USE(path: NameID, alias: NameID), // CHIP names available for creation could have other ids
+    IN(n: NameID),
+    OUT(n: NameID),
 
-	RAIL(n: NameID),
+    RAIL(n: NameID),
 
-	CHIP(alias: NameID, name: NameID),
+    CHIP(alias: NameID, name: NameID),
 
-	CONNECT(a: NameID, b: NameID),
+    CONNECT(a: NameID, b: NameID),
 
-	CUSTOM(n: NameID)
+    CUSTOM(n: NameID)
 }
