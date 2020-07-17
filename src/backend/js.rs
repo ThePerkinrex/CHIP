@@ -29,7 +29,7 @@ impl Backend for JsBackend {
 		for (k, v) in program.files.iter() {
 			writeln!(file, "{}", gen_class(k.clone().replace(".", "_"), v.clone(), &program));
 		}
-		println!("------------------- JS -------------------");
+		//println!("------------------- JS -------------------");
 		println!("{}", file);
 		file
 	}
@@ -151,13 +151,6 @@ fn gen_run_code(chip: Chip, program: &Program) -> String {
 	func
 }
 
-fn get_custom_code<'a>(n: String) -> &'a str {
-	match n.as_str() {
-		"AND" => "out = in0 && in1;\n",
-		c => panic!("{} is not a valid custom code in JS", c),
-	}
-}
-
 fn build_tree(start: String, connections: &Vec<(String, String)>) -> ConnectionTree {
 	if start.contains(".") {
 		let mut top: HashMap<String, ConnectionTree> = HashMap::new();
@@ -215,4 +208,12 @@ fn val(trees: Vec<ConnectionTree>, chip_aliases_v: &HashMap<String, &Chip>) -> S
 		};
 	}
 	vals.join("||")
+}
+
+fn get_custom_code<'a>(n: String) -> &'a str {
+	match n.as_str() {
+		"AND" => "out = in0 && in1;\n",
+		"NOT" => "o = !i;\n",
+		c => panic!("{} is not a valid custom code in JS", c),
+	}
 }

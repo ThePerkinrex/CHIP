@@ -17,6 +17,7 @@ pub struct Program {
 impl Program {
 	pub fn new() -> Self {
 		let mut hm = HashMap::new();
+		// FIXME Add a macro to do this
 		hm.insert(
 			"STD.AND".into(),
 			Chip {
@@ -29,6 +30,19 @@ impl Program {
 				ins: vec!["in0".into(), "in1".into()],
 				outs: vec!["out".into()],
 				name: "STD.AND".into()
+			},
+		);
+		hm.insert(
+			"STD.NOT".into(),
+			Chip {
+				ast: vec![
+					AST::IN("i".into()),
+					AST::OUT("o".into()),
+					AST::CUSTOM("NOT".into())
+					],
+				ins: vec!["i".into()],
+				outs: vec!["o".into()],
+				name: "STD.NOT".into()
 			},
 		);
 		Self { files: hm }
@@ -242,13 +256,14 @@ impl Chip {
 									}
 								}
 							} else if kind2 == &StatementKind::CHIP {
-								let chip1 = program.get_chip(chip_defs.get(&name1[0]).unwrap());
-								let io = if chip1.ins.contains(&name1[1]) {
+								
+								let chip1 = program.get_chip(chip_defs.get(&name2[0]).unwrap());
+								let io = if chip1.ins.contains(&name2[1]) {
 									InOut::IN
-								} else if chip1.outs.contains(&name1[1]) {
+								} else if chip1.outs.contains(&name2[1]) {
 									InOut::OUT
 								} else {
-									panic!("Name {} not found", name1.join("."))
+									panic!("Name {} not found", name2.join("."))
 								};
 
 								if kind1 == &StatementKind::IN {
