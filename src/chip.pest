@@ -18,3 +18,4 @@ DEFINED_NAME = ${NAME ~ "." ~ NAME | NAME}
 CONNECT = {^"CONNECT" ~ DEFINED_NAME ~ DEFINED_NAME}
 
 WHITESPACE = _{SPACE_SEPARATOR}
+COMMENT = _{("/*" ~ (!"*/" ~ ANY)* ~ "*/") | ("//" ~ (!(NEWLINE | EOI) ~ ANY)* ~ (NEWLINE | EOI))}
